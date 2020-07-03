@@ -1,2 +1,2 @@
-# grossobot-go
-Sk8 memes for your discord
+# grossgoobot
+discord meme bot in golang
