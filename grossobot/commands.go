@@ -144,7 +144,7 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 	p := c.Values[1]
 	t := c.Values[2:]
 	for i, v := range t {
-		t[i] = strings.ReplaceAll(v, "_", " ")
+		t[i] = strings.Replace(v, "_", " ", -1)
 	}
 	fmt.Println("p ", p)
 	fmt.Println("t ", t)
