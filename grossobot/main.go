@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +14,13 @@ import (
 
 func main() {
 	// Create a new Discord session using the provided bot token.
+	if fileExists(os.Getenv("MEMEARCH")) {
+		dat, err := ioutil.ReadFile(os.Getenv("MEMEARCH"))
+		if err != nil {
+			return
+		}
+		json.Unmarshal(dat, &cases)
+	}
 	dg, err := discordgo.New("Bot " + os.Getenv("BOTID"))
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)

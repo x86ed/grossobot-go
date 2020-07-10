@@ -135,12 +135,17 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	s.ChannelMessageSend(m.ChannelID, "processing...")
+	bot := getFile("https://i.ibb.co/4RBtbVC/grossobot.gif")
+	s.ChannelFileSend(m.ChannelID, "grossobot.gif", bot)
 	if len(c.Values) < 2 {
 		s.ChannelMessageSend(m.ChannelID, "aww that one was wack. try again")
 		return
 	}
 	p := c.Values[1]
 	t := c.Values[2:]
+	for i, v := range t {
+		t[i] = strings.ReplaceAll(v, "_", " ")
+	}
 	fmt.Println("p ", p)
 	fmt.Println("t ", t)
 	url := "https://api.imgbb.com/1/upload?key=" + os.Getenv("IMGBBKEY")
@@ -185,6 +190,26 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	cases = caseMatch(new, cases)
 	go demoNew(t, p, s, m)
+	go archiveMemes(os.Getenv("MEMEARCH"))
+}
+
+func archiveMemes(fn string) {
+	f, err := os.Create(fn)
+	if err != nil {
+		return
+	}
+
+	defer f.Close()
+
+	arch, err := json.Marshal(&cases)
+	if err != nil {
+		return
+	}
+	c, err := f.Write(arch)
+	if err != nil {
+		return
+	}
+	fmt.Println("bytes: ", c)
 }
 
 func caseMatch(n Case, c []Case) []Case {

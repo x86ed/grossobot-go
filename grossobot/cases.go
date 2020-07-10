@@ -14,10 +14,10 @@ import (
 
 //Case to trigger an image
 type Case struct {
-	Triggers    []string
-	Images      []string
-	Type        int
-	Description string
+	Triggers    []string `json:"triggers"`
+	Images      []string `json:"images"`
+	Type        int      `json:"type"`
+	Description string   `json:"desc"`
 }
 
 func getFile(s string) io.Reader {
@@ -177,7 +177,7 @@ var dt = Case{
 }
 
 var kook = Case{
-	Triggers:    []string{"kook", "longboard", "short board", "penny", "nickel", "boosted", "rip n dip", "ripndip", "revive", "braille"},
+	Triggers:    []string{"kook", "longboard", "short board", "penny", "nickel", "boosted", "rip n dip", "ripndip", "revive", "braille", "wknd"},
 	Type:        CONTAINS,
 	Images:      []string{"https://i.ibb.co/MGCnDmw/kyro.gif", "https://i.ibb.co/Hn63Dtw/image.gif", "https://i.ibb.co/5j6fxqS/savage.gif", "https://i.ibb.co/y844WKw/ollie.gif", "https://i.ibb.co/QfCRKDj/slalom.gif", "https://i.ibb.co/vwhSDyh/tophat.gif", "https://i.ibb.co/1mYGHgs/mall.gif", "https://i.ibb.co/Y36SFcg/boosted.gif", "https://i.ibb.co/LSjwhz5/vespakook.gif", "https://i.ibb.co/7VJBXLx/buscemi.gif", "https://i.ibb.co/C5qR4Qg/policekook.gif", "https://i.ibb.co/84dHtZR/skooterbooter.gif"},
 	Description: "You know it when you see it.",
@@ -205,9 +205,9 @@ var wack = Case{
 }
 
 var footy = Case{
-	Triggers:    []string{"footy", "footage", "film", "clips", "pics", "post footy", "frog", "🐸"},
+	Triggers:    []string{"footy", "footage", "film", "clips", "pics", "post footy", "frog", ":frog:"},
 	Type:        CONTAINS,
-	Images:      []string{"https://i.ibb.co/nL3QFwj/footy.jpg", "https://i.ibb.co/nLWhH42/vx.gif", "https://i.ibb.co/m8NdsDQ/image0-17.jpg", "https://i.ibb.co/BC84Fsp/image0.jpg"},
+	Images:      []string{"https://i.ibb.co/nL3QFwj/footy.jpg", "https://i.ibb.co/nLWhH42/vx.gif", "https://i.ibb.co/m8NdsDQ/image0-17.jpg", "https://i.ibb.co/BC84Fsp/image0.jpg", "https://i.ibb.co/gSNv8Jb/Eb6f-Uh-AVAAAARnt.png", "https://i.ibb.co/Fn4sZXk/Eb4e-BIIU0-AAZ76-N.png"},
 	Description: "Send Footage DH.",
 }
 
@@ -261,23 +261,117 @@ var owen = Case{
 }
 
 var grecs = Case{
-	Triggers:    []string{"security guard", "rent a cop", "tantrum"},
+	Triggers:    []string{"security guard", "rent a cop", "tantrum", ":woman_police_officer:", ":police_officer:", ":police_car:", ":pig:", ":pig2:", ":pig_nose:"},
 	Type:        CONTAINS,
-	Images:      []string{"https://i.ibb.co/1XzCkK2/grecs.gif"},
+	Images:      []string{"https://i.ibb.co/1XzCkK2/grecs.gif", "https://i.ibb.co/fx3mTTR/Variable-Kindly-Bedlingtonterrier-size-restricted.gif"},
 	Description: "I ❤️ 🐖s.",
+}
+var wheels = Case{
+	Triggers:    []string{"wheels"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/q92W4qm/spitfire-wheels-sizes.jpg"},
+	Description: "Images that show vendors wheel styles in detail.",
+}
+
+var thirteen = Case{
+	Triggers:    []string{"13flat13", "13 flat 13", "schlager", "matt schlager", "@13 flat 13 in the rain"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/V9g9JFG/RntJxH.gif"},
+	Description: "Sending it so hard your bail makes you a household name.",
+}
+
+var goo = Case{
+	Triggers:    []string{"shoegoo", "cum", "goo", "shoe", "jizz", "bukkake", "ぶっかけ"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/yWLhk7N/airwalks-shoe-goo.jpg", "https://i.ibb.co/wK6bgx8/shoegoo-2.jpg", "https://i.ibb.co/3SFz3b4/maxresdefault.jpg", "https://i.ibb.co/wzBf1zk/2818.jpg"},
+	Description: "A bunch of shoes held together with tape rags and goo like an Andy Roy fifi.",
+}
+
+var jonze = Case{
+	Triggers:    []string{"Spike Jonze", "Adam Spiegel", "Spike", "Jonze", "@Spike Jonze"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/hLb4CMj/tumblr-n2eujrb-Zwg1spiuxqo3-250.gif"},
+	Description: "The only member of the Beastie Boys who can 360 flip.",
+}
+
+var kickflip = Case{
+	Triggers:    []string{"kickflip", "kflip", "@kickflip"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/ry5w5sv/quizkickflip.gif"},
+	Description: "Just Do It!",
+}
+
+var varial = Case{
+	Triggers:    []string{"varial flip", "vflip", "varial", "@varial flip"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/C03v02H/quizvarialflip2.gif"},
+	Description: "No hands!",
+}
+
+var tre = Case{
+	Triggers:    []string{"360 flip", "treflip", "3flip", "@tre flip"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/SXrmc3S/quiztreflip.gif"},
+	Description: "No stanky leg plz.",
+}
+
+var heel = Case{
+	Triggers:    []string{"heel flip", "heelflip", "heel", "@heelflip"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/K6FKMMV/quizheelflip.gif"},
+	Description: "You gotta antwuant it.",
+}
+
+var hard = Case{
+	Triggers:    []string{"hard flip", "hardflip", "hflip", "@hardflip"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/jvBGQwd/quizhardflip.gif"},
+	Description: "Not easier than it looks.",
+}
+
+var bank = Case{
+	Triggers:    []string{"bank", "brklyn", "brooklyn", "brooklyn banks"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/brgSxF1/47m9o8.jpg"},
+	Description: "R.I.P.",
+}
+
+var wolff = Case{
+	Triggers:    []string{"wolffy hawk", "wolffyhawk", "Nick Boisero"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/YtKRkJF/image0.gif"},
+	Description: "That looks shopped",
+}
+
+var gtfo = Case{
+	Triggers:    []string{"get out", "gtfo", ":leaf:"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/3p8P3QM/image1.gif", "https://i.ibb.co/8n37bm0/image0.gif"},
+	Description: "Plz make like a :tree: & :leaf:.",
+}
+
+var reddit = Case{
+	Triggers:    []string{"reddit", "r/newskaters", "r/skateboarding", "/r/newskaters", "/r/skateboarding", "poser"},
+	Type:        CONTAINS,
+	Images:      []string{"https://i.ibb.co/ykmgMzz/image0.jpg", "https://i.ibb.co/MnBsTw0/image0.jpg"},
+	Description: "...bruh",
 }
 
 var cases = []Case{
 	baker,
 	bam,
+	bank,
 	chin,
 	crob,
 	dt,
 	footy,
+	goo,
 	greco,
 	grecs,
 	grosso,
+	gtfo,
 	hammers,
+	jonze,
 	kflip,
 	kook,
 	manramp,
@@ -288,12 +382,21 @@ var cases = []Case{
 	oof,
 	owen,
 	pissDrunx,
+	reddit,
 	shecks,
 	skin,
+	thirteen,
 	tony,
 	twuan,
 	uh,
 	wack,
 	weck,
+	wheels,
+	wolff,
 	wray,
+	kickflip,
+	heel,
+	varial,
+	hard,
+	tre,
 }
