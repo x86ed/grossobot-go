@@ -134,11 +134,15 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "Nice try. Keep practicing the art of shit talking.")
 		return
 	}
-	s.ChannelMessageSend(m.ChannelID, "processing...")
+	dm, err := s.UserChannelCreate(m.Author.ID)
+	if err != nil {
+		return
+	}
+	s.ChannelMessageSend(dm.ID, "processing...")
 	bot := getFile("https://i.ibb.co/4RBtbVC/grossobot.gif")
-	s.ChannelFileSend(m.ChannelID, "grossobot.gif", bot)
+	s.ChannelFileSend(dm.ID, "grossobot.gif", bot)
 	if len(c.Values) < 2 {
-		s.ChannelMessageSend(m.ChannelID, "aww that one was wack. try again")
+		s.ChannelMessageSend(dm.ID, "aww that one was wack. try again")
 		return
 	}
 	p := c.Values[1]
@@ -154,7 +158,7 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
 	_ = writer.WriteField("image", p)
-	err := writer.Close()
+	err = writer.Close()
 	if err != nil {
 		s.ChannelMessageSend(m.ChannelID, "hehehe not that one.")
 		return
@@ -252,7 +256,10 @@ func containsVal(s []string, e string) int {
 }
 
 func (c *Command) list(s *discordgo.Session, m *discordgo.MessageCreate) {
-	fmt.Println("list")
+	dm, err := s.UserChannelCreate(m.Author.ID)
+	if err != nil {
+		return
+	}
 	items := []string{}
 	for _, v := range cases {
 		line := "**" + strings.Join(v.Triggers, "/") + "** - " + v.Description
@@ -260,12 +267,16 @@ func (c *Command) list(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	fmt.Println(items)
 	for _, v := range items {
-		s.ChannelMessageSend(m.ChannelID, v)
+		s.ChannelMessageSend(dm.ID, v)
 	}
 }
 
 func (c *Command) help(s *discordgo.Session, m *discordgo.MessageCreate) {
-	s.ChannelMessageSend(m.ChannelID, help)
+	dm, err := s.UserChannelCreate(m.Author.ID)
+	if err != nil {
+		return
+	}
+	s.ChannelMessageSend(dm.ID, help)
 }
 
 func (c *Command) desc(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -273,11 +284,15 @@ func (c *Command) desc(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "Nice try. Keep practicing the art of shit talking.")
 		return
 	}
-	s.ChannelMessageSend(m.ChannelID, "processing...")
+	dm, err := s.UserChannelCreate(m.Author.ID)
+	if err != nil {
+		return
+	}
+	s.ChannelMessageSend(dm.ID, "processing...")
 	bot := getFile("https://i.ibb.co/4RBtbVC/grossobot.gif")
-	s.ChannelFileSend(m.ChannelID, "grossobot.gif", bot)
+	s.ChannelFileSend(dm.ID, "grossobot.gif", bot)
 	if len(c.Values) < 2 {
-		s.ChannelMessageSend(m.ChannelID, "aww that one was wack. try again")
+		s.ChannelMessageSend(dm.ID, "aww that one was wack. try again")
 		return
 	}
 	t := c.Values[1]
