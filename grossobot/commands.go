@@ -165,7 +165,7 @@ type BBdata struct {
 
 //CheckRole Checks to see if the user has the min required role
 func CheckRole(m *discordgo.MessageCreate) bool {
-	role := "327845878578675713"
+	role := "327840671811502081"
 	var badRoles = []string{
 		"359852475181694976",
 		"636246344855453696",
