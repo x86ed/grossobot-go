@@ -17,7 +17,7 @@ import (
 
 var quizJudge = []string{
 	"329451587422519297",
-	"202218126987755523",
+	"202218126987755523", //lsd
 	"313719596886523904",
 }
 
@@ -142,7 +142,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 			if len(c.Values) < 2 {
 				unApproved := []int{}
 				for i, v := range Questions {
-					if !v.Active {
+					if v.Active != true {
 						unApproved = append(unApproved, i)
 					}
 				}
