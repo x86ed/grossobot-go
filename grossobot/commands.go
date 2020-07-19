@@ -20,6 +20,19 @@ var help string = "```yaml\n" +
 * !grosso add/!grossoadd imageurl trigger anothertrigger - add the emoji to grossobot to be triggered by a space separated list of words.
 * !grosso list/!grossolist - print a full list of triggers for grossobot.
 * !grosso describe/!grossodesc trigger description goes here - add or rewrite the description for the field with the given trigger.
+* !grosso kook/!kook @username - kook a user for being a kook.
+* !grosso unkook/!unkook @username - unkook a kooked user.
+Trivia:
+* !grosso team/!grossoteam teamname - create a trivia team.
+* !grosso join/!grossojoin teamname authkey - join a trivia team.
+* !grosso answer/!grossoanswer answer- answer trivia question.
+*
+* !grosso submit/!grossosub - suggest a new question.
+* !grosso board/!grossoboard (username) - get leaderboard for user or all users if blank
+* 
+* !grosso trivia/!trivia - start a new trivia game (admins only)
+* !grosso proctor/!grossoproc - judge a given answer (admins only)
+* !grosso approve/!grossoapp - approve or deny a given question (admins only)
 Emotes:
 Trigger these by bolding the trigger word for example "**dogtown**" below are some examples but there are many more we didn't list.
 * crob/muska/mullen/natas/etc - Clips of said pro skater. 
@@ -40,6 +53,31 @@ var actionMap = map[string]string{
 	"!grosso describe": "desc",
 	"!grossolist":      "list",
 	"!grosso list":     "list",
+	"!grosso team":     "team",
+	"!grossoteam":      "team",
+	"!grosso submit":   "sub",
+	"!grossosub":       "sub",
+	"!grosso board":    "board",
+	"!grossoboard":     "board",
+	"!grosso proctor":  "proc",
+	"!grossoproc":      "proc",
+	"!grosso approve":  "app",
+	"!grossoapp":       "app",
+	"!grosso kook":     "kook",
+	"!kook":            "kook",
+	"!grosso unkook":   "unkook",
+	"!unkook":          "unkook",
+	"!grosso trivia":   "trivia",
+	"!trivia":          "trivia",
+
+	"+question":   "question",
+	"+correct":    "correct",
+	"+answer":     "answer",
+	"+image":      "image",
+	"+difficulty": "difficulty",
+	"+cancel":     "cancel",
+	"+save":       "save",
+	"+help":       "thelp",
 }
 
 //Command struct for grosso commands
@@ -85,6 +123,30 @@ func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 		c.help(s, m)
 	case "desc":
 		c.desc(s, m)
+	case "kook":
+		c.kook(s, m)
+	case "unkook":
+		c.unkook(s, m)
+	case "team":
+		c.team(s, m)
+	case "sub":
+		c.submit(s, m)
+	case "question":
+		c.sub(s, m, "question")
+	case "correct":
+		c.sub(s, m, "correct")
+	case "answer":
+		c.sub(s, m, "answer")
+	case "image":
+		c.sub(s, m, "image")
+	case "difficulty":
+		c.sub(s, m, "difficulty")
+	case "cancel":
+		c.sub(s, m, "cancel")
+	case "save":
+		c.sub(s, m, "save")
+	case "thelp":
+		c.sub(s, m, "help")
 	}
 }
 
@@ -109,6 +171,9 @@ func CheckRole(m *discordgo.MessageCreate) bool {
 		"716536970309927033",
 		"416424719487860736",
 		"697875957964603403",
+	}
+	if m.Message.Member == nil {
+		return false
 	}
 	if containsVal(m.Message.Member.Roles, role) > -1 {
 		for _, v := range badRoles {
@@ -190,7 +255,7 @@ func (c *Command) add(s *discordgo.Session, m *discordgo.MessageCreate) {
 	new := Case{
 		Triggers: t,
 		Type:     CONTAINS,
-		Images:   []string{p},
+		Images:   []string{bb.Data.URL},
 	}
 	cases = caseMatch(new, cases)
 	go demoNew(t, p, s, m)
@@ -244,15 +309,6 @@ func caseDesc(s, d string, c []Case) ([]Case, Case) {
 		}
 	}
 	return c, out
-}
-
-func containsVal(s []string, e string) int {
-	for i, a := range s {
-		if a == e {
-			return i
-		}
-	}
-	return -1
 }
 
 func (c *Command) list(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -326,9 +382,105 @@ var descc = Command{
 	Action:  "desc",
 }
 
+var kookc = Command{
+	Trigger: []string{"!grosso kook", "!kook"},
+	Action:  "kook",
+}
+
+var unkookc = Command{
+	Trigger: []string{"!grosso unkook", "!unkook"},
+	Action:  "unkook",
+}
+
+var triviac = Command{
+	Trigger: []string{"!grosso trivia", "!trivia"},
+	Action:  "trivia",
+}
+
+var teamc = Command{
+	Trigger: []string{"!grosso team", "!grossoteam"},
+	Action:  "team",
+}
+
+var subc = Command{
+	Trigger: []string{"!grosso submit", "!grossosub"},
+	Action:  "sub",
+}
+
+var boardc = Command{
+	Trigger: []string{"!grosso board", "!grossoboard"},
+	Action:  "board",
+}
+
+var procc = Command{
+	Trigger: []string{"!grosso proctor", "!grossoproc"},
+	Action:  "proc",
+}
+
+var appc = Command{
+	Trigger: []string{"!grosso approve", "!grossoapp"},
+	Action:  "app",
+}
+
+var questionc = Command{
+	Trigger: []string{"+question"},
+	Action:  "question",
+}
+
+var correctc = Command{
+	Trigger: []string{"+correct"},
+	Action:  "correct",
+}
+
+var answerc = Command{
+	Trigger: []string{"+answer"},
+	Action:  "answer",
+}
+
+var imagec = Command{
+	Trigger: []string{"+image"},
+	Action:  "image",
+}
+
+var difficultyc = Command{
+	Trigger: []string{"+difficulty"},
+	Action:  "difficulty",
+}
+
+var cancelc = Command{
+	Trigger: []string{"+cancel"},
+	Action:  "cancel",
+}
+
+var savec = Command{
+	Trigger: []string{"+save"},
+	Action:  "save",
+}
+
+var thelpc = Command{
+	Trigger: []string{"+help"},
+	Action:  "thelp",
+}
+
 var commands = []Command{
 	helpc,
 	listc,
 	addc,
 	descc,
+	kookc,
+	unkookc,
+	triviac,
+	teamc,
+	subc,
+	boardc,
+	procc,
+	appc,
+	questionc,
+	correctc,
+	answerc,
+	imagec,
+	difficultyc,
+	cancelc,
+	savec,
+	thelpc,
 }

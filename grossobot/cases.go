@@ -344,10 +344,10 @@ var wolff = Case{
 }
 
 var gtfo = Case{
-	Triggers:    []string{"get out", "gtfo", ":leaf:"},
+	Triggers:    []string{"get out", "gtfo", ":leaves:"},
 	Type:        CONTAINS,
 	Images:      []string{"https://i.ibb.co/3p8P3QM/image1.gif", "https://i.ibb.co/8n37bm0/image0.gif"},
-	Description: "Plz make like a :tree: & :leaf:.",
+	Description: "Plz make like a :deciduous_tree: & :leaves:.",
 }
 
 var reddit = Case{
