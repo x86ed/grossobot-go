@@ -21,6 +21,9 @@ func main() {
 		}
 		json.Unmarshal(dat, &cases)
 	}
+	if fileExists(os.Getenv("TRIVIAQUESTIONS")) {
+		unarchiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
+	}
 	dg, err := discordgo.New("Bot " + os.Getenv("BOTID"))
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)

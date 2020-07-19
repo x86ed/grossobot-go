@@ -31,8 +31,6 @@ Trivia:
 * !grosso board/!grossoboard (username) - get leaderboard for user or all users if blank
 * 
 * !grosso trivia/!trivia - start a new trivia game (admins only)
-* !grosso proctor/!grossoproc - judge a given answer (admins only)
-* !grosso approve/!grossoapp - approve or deny a given question (admins only)
 Emotes:
 Trigger these by bolding the trigger word for example "**dogtown**" below are some examples but there are many more we didn't list.
 * crob/muska/mullen/natas/etc - Clips of said pro skater. 
@@ -59,10 +57,6 @@ var actionMap = map[string]string{
 	"!grossosub":       "sub",
 	"!grosso board":    "board",
 	"!grossoboard":     "board",
-	"!grosso proctor":  "proc",
-	"!grossoproc":      "proc",
-	"!grosso approve":  "app",
-	"!grossoapp":       "app",
 	"!grosso kook":     "kook",
 	"!kook":            "kook",
 	"!grosso unkook":   "unkook",
@@ -78,6 +72,9 @@ var actionMap = map[string]string{
 	"+cancel":     "cancel",
 	"+save":       "save",
 	"+help":       "thelp",
+
+	"+proctor": "proc",
+	"+approve": "app",
 }
 
 //Command struct for grosso commands
@@ -147,6 +144,10 @@ func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 		c.sub(s, m, "save")
 	case "thelp":
 		c.sub(s, m, "help")
+	case "app":
+		c.sub(s, m, "app")
+	case "proc":
+		c.sub(s, m, "proc")
 	}
 }
 
@@ -413,12 +414,12 @@ var boardc = Command{
 }
 
 var procc = Command{
-	Trigger: []string{"!grosso proctor", "!grossoproc"},
+	Trigger: []string{"+proctor"},
 	Action:  "proc",
 }
 
 var appc = Command{
-	Trigger: []string{"!grosso approve", "!grossoapp"},
+	Trigger: []string{"+approve"},
 	Action:  "app",
 }
 

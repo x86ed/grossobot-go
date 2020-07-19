@@ -15,6 +15,12 @@ import (
 	"github.com/google/uuid"
 )
 
+var quizMasters = []string{
+	"329451587422519297",
+	"202218126987755523",
+	"313719596886523904",
+}
+
 //Score game score
 type Score struct {
 	Points int
@@ -40,6 +46,7 @@ type Question struct {
 	Correct string
 	Img     string
 	Points  int
+	Active  bool
 }
 
 //Questions for trivia
@@ -62,6 +69,10 @@ Optional Fields:
 **+cancel** aborts creating the question.
 **+save** saves the question.
 **+help** print this menu.
+`
+var adminHowTo = `
+**+proctor** judge a given answer (admins only)
+**+approve** approve or deny a given question (admins only)
 `
 
 func (c *Command) submit(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -87,6 +98,10 @@ func (c *Command) submit(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Finish the question you're working on with `+save` or `+cancel`")
 	}
+	if containsVal(quizMasters, m.Author.ID) > -1 {
+		s.ChannelMessageSend(dm.ID, howToMsg+adminHowTo)
+		return
+	}
 	s.ChannelMessageSend(dm.ID, howToMsg)
 }
 
@@ -99,7 +114,7 @@ func (c *Command) sub(s *discordgo.Session, m *discordgo.MessageCreate, sub stri
 		s.ChannelMessageSend(m.ChannelID, "It's been real, but keep this in the DMs.")
 		return
 	}
-	if _, ok := NewQuestions[m.Author.ID]; !ok {
+	if _, ok := NewQuestions[m.Author.ID]; !ok && sub != "app" && sub != "proc" {
 		id, err := uuid.NewRandom()
 		if err != nil {
 			return
@@ -116,7 +131,42 @@ func (c *Command) sub(s *discordgo.Session, m *discordgo.MessageCreate, sub stri
 
 func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub string) {
 	switch sub {
+	case "proc":
+		if containsVal(quizMasters, m.Author.ID) > -1 {
+
+		}
+	case "app":
+		if containsVal(quizMasters, m.Author.ID) > -1 {
+			if len(c.Values) < 2 {
+				unApproved := []int{}
+				for i, v := range Questions {
+					if !v.Active {
+						unApproved = append(unApproved, i)
+					}
+				}
+				for _, v := range unApproved {
+					curr := Questions[v]
+					s.ChannelMessageSend(m.ChannelID, curr.print())
+				}
+			} else {
+				approvals := c.Values[1:]
+				for _, v := range approvals {
+					for i, w := range Questions {
+						if w.ID == v {
+							w.Active = true
+							Questions[i] = w
+							s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s approved\n", w.ID))
+							archiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
+						}
+					}
+				}
+			}
+		}
 	case "help":
+		if containsVal(quizMasters, m.Author.ID) > -1 {
+			s.ChannelMessageSend(m.ChannelID, howToMsg+adminHowTo)
+			return
+		}
 		s.ChannelMessageSend(m.ChannelID, howToMsg)
 		return
 	case "question":
@@ -220,6 +270,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 }
 
 func (q *Question) print() (out string) {
+	out = "----------\n"
 	out += fmt.Sprintf("ID: %s\n", q.ID)
 	out += fmt.Sprintf("Q: %s\n", q.Text)
 	out += (q.Img + "\n")
@@ -235,5 +286,6 @@ func (q *Question) print() (out string) {
 	case 3000:
 		out += "Difficulty: hard\n"
 	}
+	out += "----------\n\n"
 	return out
 }
