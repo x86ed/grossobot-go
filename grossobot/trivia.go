@@ -15,11 +15,13 @@ import (
 	"github.com/google/uuid"
 )
 
-var quizMasters = []string{
+var quizJudge = []string{
 	"329451587422519297",
 	"202218126987755523",
 	"313719596886523904",
 }
+
+var judgeChannel = "734466604393431170"
 
 //Score game score
 type Score struct {
@@ -98,7 +100,7 @@ func (c *Command) submit(s *discordgo.Session, m *discordgo.MessageCreate) {
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Finish the question you're working on with `+save` or `+cancel`")
 	}
-	if containsVal(quizMasters, m.Author.ID) > -1 {
+	if containsVal(quizJudge, m.Author.ID) > -1 {
 		s.ChannelMessageSend(dm.ID, howToMsg+adminHowTo)
 		return
 	}
@@ -132,11 +134,11 @@ func (c *Command) sub(s *discordgo.Session, m *discordgo.MessageCreate, sub stri
 func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub string) {
 	switch sub {
 	case "proc":
-		if containsVal(quizMasters, m.Author.ID) > -1 {
+		if containsVal(quizJudge, m.Author.ID) > -1 {
 
 		}
 	case "app":
-		if containsVal(quizMasters, m.Author.ID) > -1 {
+		if containsVal(quizJudge, m.Author.ID) > -1 {
 			if len(c.Values) < 2 {
 				unApproved := []int{}
 				for i, v := range Questions {
@@ -156,6 +158,10 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 							w.Active = true
 							Questions[i] = w
 							s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s approved\n", w.ID))
+							if m.ChannelID != judgeChannel {
+								s.ChannelMessageSend(judgeChannel, w.print())
+								s.ChannelMessageSend(judgeChannel, fmt.Sprintf("%s approved\n", w.ID))
+							}
 							archiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
 						}
 					}
@@ -163,7 +169,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 			}
 		}
 	case "help":
-		if containsVal(quizMasters, m.Author.ID) > -1 {
+		if containsVal(quizJudge, m.Author.ID) > -1 {
 			s.ChannelMessageSend(m.ChannelID, howToMsg+adminHowTo)
 			return
 		}
@@ -254,6 +260,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 		v := NewQuestions[m.Author.ID]
 		if len(v.Correct) > 0 && len(v.Text) > 0 {
 			Questions = append(Questions, v)
+			s.ChannelMessageSend(judgeChannel, v.print())
 			delete(NewQuestions, m.Author.ID)
 			s.ChannelMessageSend(m.ChannelID, "Your Question has been saved")
 			archiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
