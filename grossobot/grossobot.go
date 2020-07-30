@@ -22,6 +22,10 @@ func MessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	rand.Seed(time.Now().UnixNano())
 
+	if checkCass(s, m) {
+		return
+	}
+
 	for _, v := range cases {
 		v.Process(s, m)
 	}

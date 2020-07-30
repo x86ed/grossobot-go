@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -102,6 +103,18 @@ func (c *Command) Parse(s string) (out bool) {
 		}
 	}
 	return
+}
+
+func checkCass(s *discordgo.Session, m *discordgo.MessageCreate) bool {
+	if m.Message.Member != nil && containsVal(m.Message.Member.Roles, cassanova) > -1 {
+		fmt.Println(m.ChannelID, m.Message.ID)
+		rand.Seed(time.Now().UnixNano())
+		cc := rand.Intn(len(jeremeVids))
+		s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(jeremeVids[cc], m.Author.ID))
+		return true
+	}
+	return false
 }
 
 //Process processes a command object
