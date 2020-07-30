@@ -25,12 +25,11 @@ var help string = "```yaml\n" +
 Trivia:
 * !grosso team/!grossoteam teamname - create a trivia team.
 * !grosso join/!grossojoin teamname authkey - join a trivia team.
-* !grosso answer/!grossoanswer answer- answer trivia question.
 *
 * !grosso submit/!grossosub - suggest a new question.
 * !grosso board/!grossoboard (username) - get leaderboard for user or all users if blank
 * 
-* !grosso trivia/!trivia - start a new trivia game (admins only)
+* !grosso trivia/!trivia (options) - start a new trivia game (admins only)
 Emotes:
 Trigger these by bolding the trigger word for example "**dogtown**" below are some examples but there are many more we didn't list.
 * crob/muska/mullen/natas/etc - Clips of said pro skater. 
@@ -63,10 +62,11 @@ var actionMap = map[string]string{
 	"!unkook":          "unkook",
 	"!grosso trivia":   "trivia",
 	"!trivia":          "trivia",
+	"+answer":          "answer",
 
 	"+question":   "question",
 	"+correct":    "correct",
-	"+answer":     "answer",
+	"+incorrect":  "incorrect",
 	"+image":      "image",
 	"+difficulty": "difficulty",
 	"+cancel":     "cancel",
@@ -128,12 +128,16 @@ func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 		c.team(s, m)
 	case "sub":
 		c.submit(s, m)
+	case "trivia":
+		c.trivia(s, m)
 	case "question":
 		c.sub(s, m, "question")
 	case "correct":
 		c.sub(s, m, "correct")
 	case "answer":
 		c.sub(s, m, "answer")
+	case "incorrect":
+		c.sub(s, m, "incorrect")
 	case "image":
 		c.sub(s, m, "image")
 	case "difficulty":
@@ -165,14 +169,6 @@ type BBdata struct {
 
 //CheckRole Checks to see if the user has the min required role
 func CheckRole(m *discordgo.MessageCreate) bool {
-	role := "327840671811502081"
-	var badRoles = []string{
-		"359852475181694976",
-		"636246344855453696",
-		"716536970309927033",
-		"416424719487860736",
-		"697875957964603403",
-	}
 	if m.Message.Member == nil {
 		return false
 	}
@@ -433,6 +429,11 @@ var correctc = Command{
 	Action:  "correct",
 }
 
+var incorrectc = Command{
+	Trigger: []string{"+incorrect"},
+	Action:  "incorrect",
+}
+
 var answerc = Command{
 	Trigger: []string{"+answer"},
 	Action:  "answer",
@@ -478,6 +479,7 @@ var commands = []Command{
 	appc,
 	questionc,
 	correctc,
+	incorrectc,
 	answerc,
 	imagec,
 	difficultyc,

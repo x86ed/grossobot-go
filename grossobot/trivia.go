@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -15,14 +16,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var quizJudge = []string{
-	"329451587422519297",
-	"202218126987755523", //lsd
-	"313719596886523904",
-}
-
-var judgeChannel = "734466604393431170"
-
 //Score game score
 type Score struct {
 	Points int
@@ -30,26 +23,128 @@ type Score struct {
 	Team   string
 }
 
+//Round (active trivia round)
+type Round struct {
+	Start    time.Time
+	Question *Question
+	Count    int
+	ID       string
+}
+
+//CurRound current round
+var CurRound = Round{
+	Start: time.Now(),
+	Count: 3,
+	ID:    "5",
+}
+
 //Game game object
 type Game struct {
-	Rounds   int
-	Scores   []Score
-	Current  int
-	ID       string
-	Interval time.Duration
-	Active   bool
+	Rounds    int
+	Scores    []Score
+	Current   int
+	ID        string
+	Interval  time.Duration
+	Active    bool
+	Questions []string
 }
 
 //Question game object
 type Question struct {
-	ID      string
-	Text    string
-	Answers []string
-	Correct string
-	Img     string
-	Points  int
-	Active  bool
+	ID               string
+	Text             string
+	Answers          []string
+	Correct          string
+	Img              string
+	Points           int
+	Active           bool
+	AlternateAnswers []string
 }
+
+//Answer game object
+type Answer struct {
+	ID         string
+	Value      string
+	QuestionID string
+	TimeStamp  time.Duration
+	UserID     string
+}
+
+func getQuestion(id string) Question {
+	for _, v := range Questions {
+		if v.ID == id {
+			return v
+		}
+	}
+	return Question{}
+}
+
+func (a *Answer) print() *discordgo.MessageEmbed {
+	color := 0x000000
+	difficulty := "unknown"
+	q := getQuestion(a.QuestionID)
+	gm := getActiveGame()
+	switch q.Points {
+	case 1000:
+		color = 0x00FF00
+		difficulty = "easy"
+	case 2000:
+		color = 0xFFFF00
+		difficulty = "medium"
+	case 3000:
+		color = 0xFF0000
+		difficulty = "hard"
+	}
+	f := []*discordgo.MessageEmbedField{
+		&discordgo.MessageEmbedField{
+			Name:  "ID",
+			Value: a.ID,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "difficulty",
+			Value: difficulty,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "Correct",
+			Value: q.Correct,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "Actual",
+			Value: a.Value,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "Points",
+			Value: string(int(gm.Interval-a.TimeStamp/gm.Interval) * q.Points),
+		},
+	}
+	for _, v := range q.Answers {
+		f = append(f, &discordgo.MessageEmbedField{
+			Name:  "Incorrect",
+			Value: v,
+		})
+	}
+	e := discordgo.MessageEmbed{
+		Color:       color,
+		Title:       q.ID,
+		Description: q.Text,
+		URL:         "https://discord.gg/zq3fyV",
+		// Author: &discordgo.MessageEmbedAuthor{
+		// 	URL:     "https://discord.gg/zq3fyV",
+		// 	Name:    "GrossoBot",
+		// 	IconURL: "https://i.ibb.co/4RBtbVC/grossobot.gif",
+		// },
+		Fields: f,
+	}
+	if len(q.Img) > 0 {
+		e.Image = &discordgo.MessageEmbedImage{
+			URL: q.Img,
+		}
+	}
+	return &e
+}
+
+//Games trivia games played so far
+var Games = []Game{}
 
 //Questions for trivia
 var Questions = []Question{}
@@ -65,7 +160,7 @@ Required Fields:
 **+correct** The correct answer shown to the triviamaster.
 
 Optional Fields:
-**+answer** A correct answer if the question is multiple choice. (repeat as needed)
+**+incorrect** A correct answer if the question is multiple choice. (repeat as needed)
 **+image** an image to display with the question. post a URL ending with .gif/.jpg/.png
 **+difficulty** easy/medium/hard. (defaults to medium)
 **+cancel** aborts creating the question.
@@ -148,7 +243,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 				}
 				for _, v := range unApproved {
 					curr := Questions[v]
-					s.ChannelMessageSend(m.ChannelID, curr.print())
+					s.ChannelMessageSendEmbed(m.ChannelID, curr.print())
 				}
 			} else {
 				approvals := c.Values[1:]
@@ -159,7 +254,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 							Questions[i] = w
 							s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("%s approved\n", w.ID))
 							if m.ChannelID != judgeChannel {
-								s.ChannelMessageSend(judgeChannel, w.print())
+								s.ChannelMessageSendEmbed(judgeChannel, w.print())
 								s.ChannelMessageSend(judgeChannel, fmt.Sprintf("%s approved\n", w.ID))
 							}
 							archiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
@@ -188,6 +283,19 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 			NewQuestions[m.Author.ID] = v
 		}
 	case "answer":
+		if len(c.Values) > 1 {
+			full := strings.Join(c.Values[1:], " ")
+			id, err := uuid.NewRandom()
+			if err != nil {
+				return
+			}
+			An := Answer{
+				ID:    id.String(),
+				Value: full,
+			}
+			fmt.Println(An)
+		}
+	case "incorrect":
 		if len(c.Values) > 1 {
 			v := NewQuestions[m.Author.ID]
 			v.Answers = append(v.Answers, strings.Join(c.Values[1:], " "))
@@ -260,7 +368,7 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 		v := NewQuestions[m.Author.ID]
 		if len(v.Correct) > 0 && len(v.Text) > 0 {
 			Questions = append(Questions, v)
-			s.ChannelMessageSend(judgeChannel, v.print())
+			s.ChannelMessageSendEmbed(judgeChannel, v.print())
 			delete(NewQuestions, m.Author.ID)
 			s.ChannelMessageSend(m.ChannelID, "Your Question has been saved")
 			archiveJSON(os.Getenv("TRIVIAQUESTIONS"), &Questions)
@@ -272,27 +380,177 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 	}
 	if _, ok := NewQuestions[m.Author.ID]; ok {
 		v := NewQuestions[m.Author.ID]
-		s.ChannelMessageSend(m.ChannelID, v.print())
+		s.ChannelMessageSendEmbed(m.ChannelID, v.print())
 	}
 }
 
-func (q *Question) print() (out string) {
-	out = "----------\n"
-	out += fmt.Sprintf("ID: %s\n", q.ID)
-	out += fmt.Sprintf("Q: %s\n", q.Text)
-	out += (q.Img + "\n")
-	out += fmt.Sprintf("A :%s\n", q.Correct)
-	if len(q.Answers) > 0 {
-		out += fmt.Sprintf("Incorrect Answers:\n%s\n", strings.Join(q.Answers, "\n"))
-	}
+func (q *Question) print() *discordgo.MessageEmbed {
+	color := 0x000000
+	difficulty := "unknown"
 	switch q.Points {
 	case 1000:
-		out += "Difficulty: easy\n"
+		color = 0x00FF00
+		difficulty = "easy"
 	case 2000:
-		out += "Difficulty: medium\n"
+		color = 0xFFFF00
+		difficulty = "medium"
 	case 3000:
-		out += "Difficulty: hard\n"
+		color = 0xFF0000
+		difficulty = "hard"
 	}
-	out += "----------\n\n"
-	return out
+	f := []*discordgo.MessageEmbedField{
+		&discordgo.MessageEmbedField{
+			Name:  "ID",
+			Value: q.ID,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "difficulty",
+			Value: difficulty,
+		},
+		&discordgo.MessageEmbedField{
+			Name:  "Correct",
+			Value: q.Correct,
+		},
+	}
+	for _, v := range q.Answers {
+		f = append(f, &discordgo.MessageEmbedField{
+			Name:  "Incorrect",
+			Value: v,
+		})
+	}
+	e := discordgo.MessageEmbed{
+		Color:       color,
+		Title:       q.ID,
+		Description: q.Text,
+		URL:         "https://discord.gg/zq3fyV",
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://discord.gg/zq3fyV",
+			Name:    "GrossoBot",
+			IconURL: "https://i.ibb.co/4RBtbVC/grossobot.gif",
+		},
+		Fields: f,
+	}
+	if len(q.Img) > 0 {
+		e.Image = &discordgo.MessageEmbedImage{
+			URL: q.Img,
+		}
+	}
+	return &e
+}
+
+func getActiveGame() Game {
+	for _, v := range Games {
+		if v.Active {
+			return v
+		}
+	}
+	return Game{}
+}
+
+func shuffleAnswers(f []*discordgo.MessageEmbedField, c string, q []string) []*discordgo.MessageEmbedField {
+	all := []string{}
+	labels := []string{"A.", "B.", "C.", "D.", "E."}
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(q), func(i, j int) { q[i], q[j] = q[j], q[i] })
+	if len(q) > 5 {
+		q = q[:3]
+	}
+	all = append(q, c)
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(all), func(i, j int) { all[i], all[j] = all[j], all[i] })
+	for i, v := range all {
+		f = append(f, &discordgo.MessageEmbedField{
+			Name:  labels[i],
+			Value: v,
+		})
+	}
+	return f
+}
+
+func (q *Question) ask() *discordgo.MessageEmbed {
+	activeGame := getActiveGame()
+	qs := fmt.Sprintf("Round %d of %d", activeGame.Current, activeGame.Rounds)
+	if len(activeGame.ID) < 1 {
+		return &discordgo.MessageEmbed{}
+	}
+	color := 0x000000
+	difficulty := "unknown"
+	switch q.Points {
+	case 1000:
+		color = 0x00FF00
+		difficulty = "easy"
+	case 2000:
+		color = 0xFFFF00
+		difficulty = "medium"
+	case 3000:
+		color = 0xFF0000
+		difficulty = "hard"
+	}
+	f := []*discordgo.MessageEmbedField{
+		&discordgo.MessageEmbedField{
+			Name:  "difficulty",
+			Value: difficulty,
+		},
+	}
+	for _, v := range q.Answers {
+		f = append(f, &discordgo.MessageEmbedField{
+			Name:  "Incorrect",
+			Value: v,
+		})
+	}
+	f = shuffleAnswers(f, q.Correct, q.Answers)
+	e := discordgo.MessageEmbed{
+		Color:       color,
+		Title:       qs,
+		Description: q.Text,
+		URL:         "https://discord.gg/zq3fyV",
+		Author: &discordgo.MessageEmbedAuthor{
+			URL:     "https://discord.gg/zq3fyV",
+			Name:    "GrossoBot",
+			IconURL: "https://i.ibb.co/4RBtbVC/grossobot.gif",
+		},
+		Fields: f,
+	}
+	if len(q.Img) > 0 {
+		e.Image = &discordgo.MessageEmbedImage{
+			URL: q.Img,
+		}
+	}
+	return &e
+}
+
+func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if containsVal(quizJudge, m.Author.ID) < 0 {
+		s.ChannelMessageSend(m.ChannelID, "Nice try buddy.")
+		return
+	}
+	if len(c.Values) > 1 && c.Values[1] == "cancel" {
+		for i, v := range Games {
+			if v.Active {
+				Games[i] = Games[len(Games)-1]
+				Games = Games[:len(Games)-1]
+			}
+		}
+		s.ChannelMessageSend(m.ChannelID, "Game Cancelled! No points will be awarded.")
+		return
+	}
+	if activeGame(Games) {
+		s.ChannelMessageSend(m.ChannelID, "The current game hasn't ended. Play through or cancel it with `!trivia cancel`")
+		return
+	}
+	if len(c.Values) > 1 && c.Values[1] == "start" {
+		//start trivia round
+		return
+	}
+
+}
+
+func activeGame(g []Game) (is bool) {
+	for _, v := range g {
+		if v.Active {
+			is = true
+			return
+		}
+	}
+	return
 }

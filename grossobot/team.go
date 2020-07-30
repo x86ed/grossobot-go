@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 
@@ -79,6 +80,7 @@ func (c *Command) team(s *discordgo.Session, m *discordgo.MessageCreate) {
 			ID:      role.ID,
 		}
 		teams[role.ID] = nt
+		archiveJSON(os.Getenv("TRIVIATEAMS"), &teams)
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(teamMsg, m.Author.ID, role.ID))
 	}
 }
@@ -154,6 +156,7 @@ func handleTeamAction(a string, s *discordgo.Session, m *discordgo.MessageCreate
 		if containsVal(t.Members, m.Author.ID) < 0 {
 			t.Members = append(t.Members, m.Author.ID)
 			teams[teamID] = t
+			archiveJSON(os.Getenv("TRIVIATEAMS"), &teams)
 		}
 		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(joinMsg, m.Author.ID, teamID))
 	case "list":
