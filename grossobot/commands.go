@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -23,6 +22,7 @@ var help string = "```yaml\n" +
 * !grosso describe/!grossodesc trigger description goes here - add or rewrite the description for the field with the given trigger.
 * !grosso kook/!kook @username - kook a user for being a kook.
 * !grosso unkook/!unkook @username - unkook a kooked user.
+* !grosso jereme/!jcassanova @username - jereme rogers mode.
 Trivia:
 * !grosso team/!grossoteam teamname - create a trivia team.
 * !grosso join/!grossojoin teamname authkey - join a trivia team.
@@ -63,6 +63,8 @@ var actionMap = map[string]string{
 	"!unkook":          "unkook",
 	"!grosso trivia":   "trivia",
 	"!trivia":          "trivia",
+	"!grosso jereme":   "jereme",
+	"!jcassanova":      "jereme",
 	"+answer":          "answer",
 
 	"+question":   "question",
@@ -105,18 +107,6 @@ func (c *Command) Parse(s string) (out bool) {
 	return
 }
 
-func checkCass(s *discordgo.Session, m *discordgo.MessageCreate) bool {
-	if m.Message.Member != nil && containsVal(m.Message.Member.Roles, cassanova) > -1 {
-		fmt.Println(m.ChannelID, m.Message.ID)
-		rand.Seed(time.Now().UnixNano())
-		cc := rand.Intn(len(jeremeVids))
-		s.ChannelMessageDelete(m.ChannelID, m.Message.ID)
-		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf(jeremeVids[cc], m.Author.ID))
-		return true
-	}
-	return false
-}
-
 //Process processes a command object
 func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 	cont := m.Content
@@ -143,6 +133,8 @@ func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 		c.submit(s, m)
 	case "trivia":
 		c.trivia(s, m)
+	case "jereme":
+		c.jereme(s, m)
 	case "question":
 		c.sub(s, m, "question")
 	case "correct":
@@ -477,6 +469,11 @@ var thelpc = Command{
 	Action:  "thelp",
 }
 
+var jcc = Command{
+	Trigger: []string{"!grosso jereme", "!jcassanova"},
+	Action:  "jc",
+}
+
 var commands = []Command{
 	helpc,
 	listc,
@@ -499,4 +496,5 @@ var commands = []Command{
 	cancelc,
 	savec,
 	thelpc,
+	jcc,
 }

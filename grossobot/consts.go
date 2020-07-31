@@ -30,10 +30,12 @@ var badRoles = []string{
 }
 
 const cassanova = "738449816937431082"
+const boss = "736271434468425849"
 
 var jeremeVids = []string{
 	`
-<@%s>
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:	
 > Word around town, Magnum's what I fit
 > Word around town, often they still rip
 > Word around town, Bitch I still don't got no kids
@@ -41,25 +43,29 @@ var jeremeVids = []string{
 	
 https://www.youtube.com/watch?v=Nv32onsjaeE`,
 	`
-<@%s>
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:	
 > I could argue...
 > Though I'd rather prove:
 > What's in the toilet?...digested food.
 
 https://www.youtube.com/watch?v=fVeWjRwweXk`,
 	`
-<@%s>	
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:		
 > Yung box cutter. Yo that's what we do.
 
 https://www.youtube.com/watch?v=10YHW8Vl4sc`,
 	`
-<@%s>	
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:		
 > Picking up signals like a uh..
 > Uh, WiFi.
 
 https://www.youtube.com/watch?v=obFlBi6m0G8`,
 	`
-<@%s>	
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:	
 > Overzealous when I see you...
 > Butchu wit another man so,
 > I do my bes, do my bes
@@ -67,11 +73,13 @@ https://www.youtube.com/watch?v=obFlBi6m0G8`,
 
 https://www.youtube.com/watch?v=qr3_nBctScE`,
 	`
-<@%s>	
+*<@&%s> mode enabled for the next %s.*	
+<@!%s> says:	
 > Keep that on the lolo
 > lo lo, Keep that on the 
 > LOOOOOOOOOOOOOOOOOOooo..
 
 
-https://www.youtube.com/watch?v=Rq14mdsyANM`,
+https://www.youtube.com/watch?v=Rq14mdsyANM
+`,
 }
