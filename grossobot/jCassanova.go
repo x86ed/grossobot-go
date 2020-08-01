@@ -20,19 +20,18 @@ type Penalty struct {
 var cassMap = map[string]Penalty{}
 
 func checkCass(s *discordgo.Session, m *discordgo.MessageCreate) bool {
+	if containsVal(m.Message.Member.Roles, cassanova) < 0 && len(cassMap[m.Author.ID].ID) > 0 {
+		s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, cassanova)
+		delete(cassMap, m.Author.ID)
+		s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, frogkook)
+		s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@!%s> is now <@&%s>ed.", m.Author.ID, frogkook))
+		return false
+	}
 	if m.Message.Member != nil && containsVal(m.Message.Member.Roles, cassanova) > -1 {
 		if isCassExpired(m.Author.ID) {
 			s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, cassanova)
 			delete(cassMap, m.Author.ID)
 			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@!%s> is no longer <@&%s>ed.", m.Author.ID, cassanova))
-			return false
-		}
-
-		if containsVal(m.Message.Member.Roles, cassanova) < 0 && len(cassMap[m.Author.ID].ID) > 0 {
-			s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, cassanova)
-			delete(cassMap, m.Author.ID)
-			s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, frogkook)
-			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@!%s> is now <@&%s>ed.", m.Author.ID, frogkook))
 			return false
 		}
 
