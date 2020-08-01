@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,7 +48,25 @@ type Game struct {
 	Interval  time.Duration
 	Active    bool
 	Questions []string
+	Teams     []string
 }
+
+//AddQuestion adds a question to the game
+func (g *Game) AddQuestion() Question {
+	rand.Seed(time.Now().UnixNano())
+	qi := rand.Intn(len(Questions))
+	qq := Questions[qi]
+	for containsVal(g.Questions, qq.ID) > -1 {
+		rand.Seed(time.Now().UnixNano())
+		qi = rand.Intn(len(Questions))
+		qq = Questions[qi]
+	}
+	g.Questions = append(g.Questions, qq.ID)
+	return qq
+}
+
+var defaultRounds = 10
+var defaultInterval = time.Minute
 
 //Question game object
 type Question struct {
@@ -467,7 +486,7 @@ func shuffleAnswers(f []*discordgo.MessageEmbedField, c string, q []string) []*d
 	return f
 }
 
-func (q *Question) ask() *discordgo.MessageEmbed {
+func (q *Question) ask(round string) *discordgo.MessageEmbed {
 	activeGame := getActiveGame()
 	qs := fmt.Sprintf("Round %d of %d", activeGame.Current, activeGame.Rounds)
 	if len(activeGame.ID) < 1 {
@@ -519,6 +538,10 @@ func (q *Question) ask() *discordgo.MessageEmbed {
 	return &e
 }
 
+func sendPrivQuestion(q Question, s *discordgo.Session, m *discordgo.MessageCreate, v Team, g Game) {
+
+}
+
 func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if containsVal(quizJudge, m.Author.ID) < 0 {
 		s.ChannelMessageSend(m.ChannelID, "Nice try buddy.")
@@ -538,9 +561,47 @@ func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "The current game hasn't ended. Play through or cancel it with `!trivia cancel`")
 		return
 	}
-	if len(c.Values) > 1 && c.Values[1] == "start" {
-		//start trivia round
-		return
+	if len(c.Values) > 1 {
+		switch c.Values[1] {
+		case "start":
+			//start trivia round
+			id, err := uuid.NewRandom()
+			if err != nil {
+				return
+			}
+			newGame := Game{
+				ID:        id.String(),
+				Current:   1,
+				Rounds:    defaultRounds,
+				Interval:  defaultInterval,
+				Active:    true,
+				Scores:    []Score{},
+				Questions: []string{},
+			}
+			q := newGame.AddQuestion()
+			Games = append(Games, newGame)
+			s.ChannelMessageSendEmbed(m.ChannelID, q.ask(fmt.Sprintf("Round %d of %d", newGame.Current, newGame.Rounds)))
+			for _, v := range teams {
+				sendPrivQuestion(q, s, m, v, newGame)
+			}
+		case "rounds":
+			if len(c.Values) > 2 {
+				v, e := strconv.Atoi(c.Values[2])
+				if e != nil {
+					return
+				}
+				defaultRounds = v
+			}
+		case "interval":
+			if len(c.Values) > 2 {
+				tm := strings.Join(c.Values[2:], " ")
+				v, e := time.ParseDuration(tm)
+				if e != nil {
+					return
+				}
+				defaultInterval = v
+			}
+		}
 	}
 
 }

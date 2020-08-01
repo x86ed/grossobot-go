@@ -31,10 +31,12 @@ var badRoles = []string{
 
 const cassanova = "738449816937431082"
 const boss = "736271434468425849"
+const frogkook = "739231717545607219"
 
 var jeremeVids = []string{
 	`
-*<@&%s> mode enabled for the next %s.*	
+*<@&%s> mode enabled for the next %s .*
+
 <@!%s> says:	
 > Word around town, Magnum's what I fit
 > Word around town, often they still rip
@@ -51,20 +53,23 @@ https://www.youtube.com/watch?v=Nv32onsjaeE`,
 
 https://www.youtube.com/watch?v=fVeWjRwweXk`,
 	`
-*<@&%s> mode enabled for the next %s.*	
+*<@&%s> mode enabled for the next %s .*	
+
 <@!%s> says:		
 > Yung box cutter. Yo that's what we do.
 
 https://www.youtube.com/watch?v=10YHW8Vl4sc`,
 	`
-*<@&%s> mode enabled for the next %s.*	
+*<@&%s> mode enabled for the next %s .*	
+
 <@!%s> says:		
 > Picking up signals like a uh..
 > Uh, WiFi.
 
 https://www.youtube.com/watch?v=obFlBi6m0G8`,
 	`
-*<@&%s> mode enabled for the next %s.*	
+*<@&%s> mode enabled for the next %s .*	
+
 <@!%s> says:	
 > Overzealous when I see you...
 > Butchu wit another man so,
@@ -73,7 +78,8 @@ https://www.youtube.com/watch?v=obFlBi6m0G8`,
 
 https://www.youtube.com/watch?v=qr3_nBctScE`,
 	`
-*<@&%s> mode enabled for the next %s.*	
+*<@&%s> mode enabled for the next %s .*	
+
 <@!%s> says:	
 > Keep that on the lolo
 > lo lo, Keep that on the 
