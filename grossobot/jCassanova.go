@@ -33,6 +33,7 @@ func checkCass(s *discordgo.Session, m *discordgo.MessageCreate) bool {
 			delete(cassMap, m.Author.ID)
 			s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, frogkook)
 			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@!%s> is now <@&%s>ed.", m.Author.ID, frogkook))
+			return false
 		}
 
 		v := cassMap[m.Author.ID]
