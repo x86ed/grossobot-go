@@ -20,7 +20,7 @@ type Penalty struct {
 var cassMap = map[string]Penalty{}
 
 func checkCass(s *discordgo.Session, m *discordgo.MessageCreate) bool {
-	if containsVal(m.Message.Member.Roles, cassanova) < 0 && len(cassMap[m.Author.ID].ID) > 0 {
+	if m.Message.Member != nil && containsVal(m.Message.Member.Roles, cassanova) < 0 && len(cassMap[m.Author.ID].ID) > 0 {
 		s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, cassanova)
 		delete(cassMap, m.Author.ID)
 		s.GuildMemberRoleAdd(m.GuildID, m.Author.ID, frogkook)
