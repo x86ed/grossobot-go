@@ -17,10 +17,14 @@ import (
 	"github.com/google/uuid"
 )
 
+var answers = make(chan Answer, 1)
+var currQues string
+
 //Score game score
 type Score struct {
 	Points int
 	Game   string
+	Round  int
 	Team   string
 }
 
@@ -41,14 +45,15 @@ var CurRound = Round{
 
 //Game game object
 type Game struct {
-	Rounds    int
-	Scores    []Score
-	Current   int
-	ID        string
-	Interval  time.Duration
-	Active    bool
-	Questions []string
-	Teams     []string
+	Rounds     int
+	Scores     []Score
+	Current    int
+	ID         string
+	Interval   time.Duration
+	Active     bool
+	Questions  []string
+	Teams      []string
+	RoundStart time.Time
 }
 
 //AddQuestion adds a question to the game
@@ -56,11 +61,13 @@ func (g *Game) AddQuestion() Question {
 	rand.Seed(time.Now().UnixNano())
 	qi := rand.Intn(len(Questions))
 	qq := Questions[qi]
-	for containsVal(g.Questions, qq.ID) > -1 {
+	for containsVal(g.Questions, qq.ID) > -1 || !qq.Active {
 		rand.Seed(time.Now().UnixNano())
 		qi = rand.Intn(len(Questions))
 		qq = Questions[qi]
 	}
+	g.RoundStart = time.Now()
+	g.Current++
 	g.Questions = append(g.Questions, qq.ID)
 	return qq
 }
@@ -85,8 +92,8 @@ type Answer struct {
 	ID         string
 	Value      string
 	QuestionID string
-	TimeStamp  time.Duration
-	UserID     string
+	//TimeStamp  time.Duration
+	UserID string
 }
 
 func getQuestion(id string) Question {
@@ -98,7 +105,7 @@ func getQuestion(id string) Question {
 	return Question{}
 }
 
-func (a *Answer) print() *discordgo.MessageEmbed {
+func (a *Answer) print(author *discordgo.MessageEmbedAuthor) *discordgo.MessageEmbed {
 	color := 0x000000
 	difficulty := "unknown"
 	q := getQuestion(a.QuestionID)
@@ -133,7 +140,7 @@ func (a *Answer) print() *discordgo.MessageEmbed {
 		},
 		&discordgo.MessageEmbedField{
 			Name:  "Points",
-			Value: string(int(gm.Interval-a.TimeStamp/gm.Interval) * q.Points),
+			Value: strconv.Itoa(getPoints(q, gm.RoundStart)),
 		},
 	}
 	for _, v := range q.Answers {
@@ -147,6 +154,7 @@ func (a *Answer) print() *discordgo.MessageEmbed {
 		Title:       q.ID,
 		Description: q.Text,
 		URL:         "https://discord.gg/zq3fyV",
+		Author:      author,
 		// Author: &discordgo.MessageEmbedAuthor{
 		// 	URL:     "https://discord.gg/zq3fyV",
 		// 	Name:    "GrossoBot",
@@ -163,7 +171,7 @@ func (a *Answer) print() *discordgo.MessageEmbed {
 }
 
 //Games trivia games played so far
-var Games = []Game{}
+var Games = []*Game{}
 
 //Questions for trivia
 var Questions = []Question{}
@@ -309,10 +317,17 @@ func (c *Command) param(s *discordgo.Session, m *discordgo.MessageCreate, sub st
 				return
 			}
 			An := Answer{
-				ID:    id.String(),
-				Value: full,
+				ID:         id.String(),
+				Value:      full,
+				QuestionID: currQues,
+				UserID:     m.Author.ID,
 			}
-			fmt.Println(An)
+			au := discordgo.MessageEmbedAuthor{
+				Name: m.Author.Username,
+				//IconURL: m.Member.User.AvatarURL("1024"),
+			}
+			s.ChannelMessageSendEmbed(judgeChannel, An.print(&au))
+			answers <- An
 		}
 	case "incorrect":
 		if len(c.Values) > 1 {
@@ -457,16 +472,19 @@ func (q *Question) print() *discordgo.MessageEmbed {
 	return &e
 }
 
-func getActiveGame() Game {
+func getActiveGame() *Game {
 	for _, v := range Games {
 		if v.Active {
 			return v
 		}
 	}
-	return Game{}
+	return &Game{}
 }
 
 func shuffleAnswers(f []*discordgo.MessageEmbedField, c string, q []string) []*discordgo.MessageEmbedField {
+	if len(q) < 1 {
+		return f
+	}
 	all := []string{}
 	labels := []string{"A.", "B.", "C.", "D.", "E."}
 	rand.Seed(time.Now().UnixNano())
@@ -474,6 +492,7 @@ func shuffleAnswers(f []*discordgo.MessageEmbedField, c string, q []string) []*d
 	if len(q) > 5 {
 		q = q[:3]
 	}
+	fmt.Println(q)
 	all = append(q, c)
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(all), func(i, j int) { all[i], all[j] = all[j], all[i] })
@@ -488,6 +507,7 @@ func shuffleAnswers(f []*discordgo.MessageEmbedField, c string, q []string) []*d
 
 func (q *Question) ask(round string) *discordgo.MessageEmbed {
 	activeGame := getActiveGame()
+	currQues = q.ID
 	qs := fmt.Sprintf("Round %d of %d", activeGame.Current, activeGame.Rounds)
 	if len(activeGame.ID) < 1 {
 		return &discordgo.MessageEmbed{}
@@ -511,13 +531,8 @@ func (q *Question) ask(round string) *discordgo.MessageEmbed {
 			Value: difficulty,
 		},
 	}
-	for _, v := range q.Answers {
-		f = append(f, &discordgo.MessageEmbedField{
-			Name:  "Incorrect",
-			Value: v,
-		})
-	}
 	f = shuffleAnswers(f, q.Correct, q.Answers)
+	fmt.Println(f)
 	e := discordgo.MessageEmbed{
 		Color:       color,
 		Title:       qs,
@@ -538,7 +553,26 @@ func (q *Question) ask(round string) *discordgo.MessageEmbed {
 	return &e
 }
 
-func sendPrivQuestion(q Question, s *discordgo.Session, m *discordgo.MessageCreate, v Team, g Game) {
+func sendPrivQuestion(q Question, s *discordgo.Session, m *discordgo.MessageCreate, t Team, g *Game) {
+	//guild, err := s.Guild(m.GuildID)
+	// if err != nil {
+	// 	fmt.Println("error ", err)
+	// 	return
+	// }
+
+	all := append(t.Members, t.Captain)
+	for _, v := range all {
+		//fmt.Println("v.Roles", v.Roles, t.ID)
+		//if containsVal(v.Roles, t.ID) > -1 {
+		//fmt.Println("user ID", v, quizJudge)
+		dm, err := s.UserChannelCreate(v)
+		if err != nil {
+			fmt.Println("error ", err)
+			return
+		}
+		s.ChannelMessageSendEmbed(dm.ID, q.ask("999"))
+		//}
+	}
 
 }
 
@@ -570,20 +604,23 @@ func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			newGame := Game{
-				ID:        id.String(),
-				Current:   1,
-				Rounds:    defaultRounds,
-				Interval:  defaultInterval,
-				Active:    true,
-				Scores:    []Score{},
-				Questions: []string{},
+				ID:         id.String(),
+				Current:    0,
+				Rounds:     defaultRounds,
+				Interval:   defaultInterval,
+				Active:     true,
+				Scores:     []Score{},
+				Questions:  []string{},
+				RoundStart: time.Now(),
+				Teams:      getActiveTeams(),
 			}
 			q := newGame.AddQuestion()
-			Games = append(Games, newGame)
+			Games = append(Games, &newGame)
 			s.ChannelMessageSendEmbed(m.ChannelID, q.ask(fmt.Sprintf("Round %d of %d", newGame.Current, newGame.Rounds)))
 			for _, v := range teams {
-				sendPrivQuestion(q, s, m, v, newGame)
+				sendPrivQuestion(q, s, m, v, &newGame)
 			}
+			go quesDaemon(&newGame, s, m)
 		case "rounds":
 			if len(c.Values) > 2 {
 				v, e := strconv.Atoi(c.Values[2])
@@ -591,6 +628,7 @@ func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				defaultRounds = v
+				return
 			}
 		case "interval":
 			if len(c.Values) > 2 {
@@ -600,13 +638,14 @@ func (c *Command) trivia(s *discordgo.Session, m *discordgo.MessageCreate) {
 					return
 				}
 				defaultInterval = v
+				return
 			}
 		}
 	}
 
 }
 
-func activeGame(g []Game) (is bool) {
+func activeGame(g []*Game) (is bool) {
 	for _, v := range g {
 		if v.Active {
 			is = true
@@ -614,4 +653,107 @@ func activeGame(g []Game) (is bool) {
 		}
 	}
 	return
+}
+
+func quesDaemon(g *Game, s *discordgo.Session, m *discordgo.MessageCreate) {
+	for g.Active {
+		select {
+		case <-time.After(g.Interval):
+			fmt.Println("timeout")
+			if endRound(g) {
+				q := g.AddQuestion()
+				s.ChannelMessageSendEmbed(m.ChannelID, q.ask(""))
+				for _, v := range teams {
+					sendPrivQuestion(q, s, m, v, g)
+				}
+			}
+		case ans := <-answers:
+			fmt.Println("ans")
+			scanAnswer(ans, g, s, m)
+		}
+	}
+	fmt.Println("ended")
+}
+
+func endRound(g *Game) bool {
+	if g.Current < g.Rounds {
+		//g.Current++
+		g.RoundStart = time.Now()
+		return true
+	}
+	g.Active = false
+	return false
+}
+
+func scanAnswer(a Answer, g *Game, s *discordgo.Session, m *discordgo.MessageCreate) {
+	fmt.Println(a.QuestionID, g.Questions[g.Current-1])
+	if a.QuestionID == g.Questions[g.Current-1] {
+		var q Question
+		for _, v := range Questions {
+			if v.ID == a.QuestionID {
+				q = v
+			}
+		}
+		var scoreCount int
+		if q.Correct == a.Value {
+			fmt.Println("Correct!")
+			for _, v := range g.Scores {
+				if v.Round == g.Current && v.Team == getTeam(a.UserID, g.Teams) {
+					fmt.Println("already submitted")
+					return
+				}
+			}
+			s := Score{
+				Points: getPoints(q, g.RoundStart),
+				Game:   g.ID,
+				Team:   getTeam(a.UserID, g.Teams),
+				Round:  g.Current,
+			}
+			g.Scores = append(g.Scores, s)
+		}
+		for _, v := range g.Scores {
+			if v.Round == g.Current {
+				scoreCount++
+				fmt.Println("teams", scoreCount, len(g.Teams), g.Teams)
+				if scoreCount >= len(g.Teams) {
+					fmt.Println("ansDone")
+					if endRound(g) {
+						q := g.AddQuestion()
+						s.ChannelMessageSendEmbed(m.ChannelID, q.ask(""))
+						for _, v := range teams {
+							sendPrivQuestion(q, s, m, v, g)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func getTeam(u string, t []string) string {
+	for _, v := range t {
+		vv := teams[v]
+		if u == vv.Captain || containsVal(vv.Members, u) > -1 {
+			return v
+		}
+	}
+	return ""
+}
+
+func getActiveTeams() []string {
+	var out = []string{}
+	for _, v := range teams {
+		if !v.Inactive {
+			out = append(out, v.ID)
+		}
+	}
+	return out
+}
+
+func getPoints(q Question, t time.Time) int {
+	dur := float64(time.Now().Sub(t).Milliseconds())
+	full := float64(time.Minute.Milliseconds())
+	ratio := dur / full
+	out := int(float64(q.Points) * ratio)
+	return out
 }
