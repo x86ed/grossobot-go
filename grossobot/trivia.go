@@ -751,8 +751,8 @@ func getActiveTeams() []string {
 }
 
 func getPoints(q Question, t time.Time) int {
-	dur := float64(time.Now().Sub(t).Milliseconds())
-	full := float64(time.Minute.Milliseconds())
+	dur := float64(time.Now().Sub(t).Seconds())
+	full := float64(time.Minute.Seconds())
 	ratio := dur / full
 	out := int(float64(q.Points) * ratio)
 	return out
