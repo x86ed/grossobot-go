@@ -21,6 +21,7 @@ var help string = "```yaml\n" +
 * !grosso list/!grossolist - print a full list of triggers for grossobot.
 * !grosso describe/!grossodesc trigger description goes here - add or rewrite the description for the field with the given trigger.
 * !grosso kook/!kook @username - kook a user for being a kook.
+* !grosso superkook/!superkook @username - kook a user for being a kook.
 * !grosso unkook/!unkook @username - unkook a kooked user.
 * !grosso jereme/!jcassanova @username - jereme rogers mode.
 Trivia:
@@ -43,29 +44,31 @@ Trigger these by bolding the trigger word for example "**dogtown**" below are so
 ` + "uh - uh...```"
 
 var actionMap = map[string]string{
-	"!grosso help":     "help",
-	"!grossohelp":      "help",
-	"!grossoadd":       "add",
-	"!grosso add":      "add",
-	"!grossodesc":      "desc",
-	"!grosso describe": "desc",
-	"!grossolist":      "list",
-	"!grosso list":     "list",
-	"!grosso team":     "team",
-	"!grossoteam":      "team",
-	"!grosso submit":   "sub",
-	"!grossosub":       "sub",
-	"!grosso board":    "board",
-	"!grossoboard":     "board",
-	"!grosso kook":     "kook",
-	"!kook":            "kook",
-	"!grosso unkook":   "unkook",
-	"!unkook":          "unkook",
-	"!grosso trivia":   "trivia",
-	"!trivia":          "trivia",
-	"!grosso jereme":   "jereme",
-	"!jcassanova":      "jereme",
-	"+answer":          "answer",
+	"!grosso help":      "help",
+	"!grossohelp":       "help",
+	"!grossoadd":        "add",
+	"!grosso add":       "add",
+	"!grossodesc":       "desc",
+	"!grosso describe":  "desc",
+	"!grossolist":       "list",
+	"!grosso list":      "list",
+	"!grosso team":      "team",
+	"!grossoteam":       "team",
+	"!grosso submit":    "sub",
+	"!grossosub":        "sub",
+	"!grosso board":     "board",
+	"!grossoboard":      "board",
+	"!grosso kook":      "kook",
+	"!kook":             "kook",
+	"!grosso superkook": "superkook",
+	"!superkook":        "superkook",
+	"!grosso unkook":    "unkook",
+	"!unkook":           "unkook",
+	"!grosso trivia":    "trivia",
+	"!trivia":           "trivia",
+	"!grosso jereme":    "jereme",
+	"!jcassanova":       "jereme",
+	"+answer":           "answer",
 
 	"+question":   "question",
 	"+correct":    "correct",
@@ -127,6 +130,8 @@ func (c *Command) Process(s *discordgo.Session, m *discordgo.MessageCreate) {
 		c.kook(s, m)
 	case "unkook":
 		c.unkook(s, m)
+	case "superkook":
+		c.superkook(s, m)
 	case "team":
 		c.team(s, m)
 	case "sub":
@@ -387,6 +392,11 @@ var descc = Command{
 var kookc = Command{
 	Trigger: []string{"!grosso kook", "!kook"},
 	Action:  "kook",
+}
+
+var skookc = Command{
+	Trigger: []string{"!grosso superkook", "!superkook"},
+	Action:  "superkook",
 }
 
 var unkookc = Command{

@@ -76,6 +76,7 @@ func (c *Command) jereme(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		s.GuildMemberRoleRemove(m.GuildID, m.Author.ID, boss)
 		user := strings.Replace(strings.Replace(c.Values[1], "<@!", "", -1), ">", "", -1)
+		fmt.Println(c.Values[1])
 		if len(c.Values) > 2 && c.Values[2] == "cancel" {
 			delete(cassMap, user)
 			s.GuildMemberRoleRemove(m.GuildID, user, cassanova)
