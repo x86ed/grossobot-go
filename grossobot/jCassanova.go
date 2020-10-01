@@ -83,6 +83,7 @@ func (c *Command) jereme(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("<@!%s> is no longer <@&%s>ed.", user, cassanova))
 			return
 		}
+		fmt.Println("user ", user)
 		s.GuildMemberRoleAdd(m.GuildID, user, cassanova)
 		cassMap[user] = Penalty{
 			ID:       user,

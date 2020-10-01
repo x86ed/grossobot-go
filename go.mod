@@ -1,6 +1,6 @@
-module github.com/x86ed/grossgoobot
+module github.com/x86ed/grossobot-go
 
-go 1.13
+go 1.15
 
 require (
 	github.com/AvraamMavridis/randomcolor v0.0.0-20180822172341-208aff70bf2c // indirect
