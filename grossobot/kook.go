@@ -18,7 +18,7 @@ type unkook struct {
 var unkooklist = []unkook{}
 
 var kooky string = `<@!%s> you have been **kooked**!
-This means you can no longer post in channels other than #offtopic .
+This means you can no longer post in #general.
 To unkook yourself you may either:
 • Get three <@&327840671811502081> members to !unkook you.
 • Win a trivia round against me <@!698330051686432900>. To play say **kooktrivia**.
